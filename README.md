@@ -13,6 +13,8 @@ This basic lexer class is meant to be used within a larger lexing project. It is
 
 Below you can find a contrived example. It is purposefully kept basic to illustrate how to use the lexer. While the example below could have also easily been solved using a simple regular expression, they are in general hard to read and debug. Using a lexer gives you a lot more flexibility and your code remains readable and easily debuggable.
 
+**NOTE: This library makes use of ES7 array methods and `Symbol`. To use it within an environment that does not support these, you have to provide your own polyfills.**
+
 ```ts
 import { EOS, Lexer } from '@johanneslumpe/basic-lexer';
 
