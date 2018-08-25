@@ -6,7 +6,17 @@ describe('Lexer', () => {
     TEST_TOKEN_B,
     ERROR_TOKEN,
   }
-  let lexer: Lexer<TokenType>;
+
+  enum SubTokenType {
+    TEST_TOKEN_SUB,
+  }
+
+  interface ITokenData {
+    subType?: SubTokenType;
+    randomData?: string;
+  }
+
+  let lexer: Lexer<TokenType, ITokenData>;
 
   beforeEach(() => (lexer = new Lexer('abcd')));
 
@@ -46,6 +56,8 @@ describe('Lexer', () => {
       lexer.emit(TokenType.TEST_TOKEN);
 
       expect(lexer.emittedTokens[0]).toEqual({
+        endPos: 2,
+        startPos: 0,
         type: TokenType.TEST_TOKEN,
         value: 'ab',
       });
@@ -59,6 +71,27 @@ describe('Lexer', () => {
       expect(lexer.currentPos).toBe(2);
       expect(lexer.startPos).toBe(2);
     });
+
+    it('should allow custom data to be passed', () => {
+      lexer.next();
+      lexer.emit(TokenType.TEST_TOKEN, {
+        randomData: 'test',
+        subType: SubTokenType.TEST_TOKEN_SUB,
+      });
+
+      expect(lexer.emittedTokens).toEqual([
+        {
+          data: {
+            randomData: 'test',
+            subType: SubTokenType.TEST_TOKEN_SUB,
+          },
+          endPos: 1,
+          startPos: 0,
+          type: TokenType.TEST_TOKEN,
+          value: 'a',
+        },
+      ]);
+    });
   });
 
   describe('#emitError', () => {
@@ -66,6 +99,8 @@ describe('Lexer', () => {
       lexer.emitError(TokenType.ERROR_TOKEN, 'test');
       expect(lexer.emittedTokens).toEqual([
         {
+          endPos: 0,
+          startPos: 0,
           type: TokenType.ERROR_TOKEN,
           value: 'test',
         },
@@ -92,6 +127,8 @@ describe('Lexer', () => {
       lexer.emit(TokenType.TEST_TOKEN);
 
       expect(lexer.lookBehind()).toEqual({
+        endPos: 1,
+        startPos: 0,
         type: TokenType.TEST_TOKEN,
         value: 'a',
       });
@@ -186,11 +223,17 @@ describe('Lexer', () => {
       expect(
         lexer.lookBehindForTypes(TokenType.TEST_TOKEN, TokenType.TEST_TOKEN_B),
       ).toEqual({
+        data: undefined,
+        endPos: 3,
+        startPos: 2,
         type: TokenType.TEST_TOKEN_B,
         value: 'c',
       });
 
       expect(lexer.lookBehindForTypes(TokenType.TEST_TOKEN)).toEqual({
+        data: undefined,
+        endPos: 2,
+        startPos: 1,
         type: TokenType.TEST_TOKEN,
         value: 'b',
       });

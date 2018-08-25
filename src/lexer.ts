@@ -1,17 +1,34 @@
 export const EOS = Symbol('EOS');
 
-export interface ILexToken<T> {
+export interface IBaseLexToken<T, D> {
   /**
    * The lexed value of the token
    */
   value: string;
+
   /**
    * The token type
    */
   type: T;
+
+  /**
+   * The position where token extraction started
+   */
+  startPos: number;
+
+  /**
+   * The position where token extraction ended.
+   * This is the position excluding the token.
+   */
+  endPos: number;
+
+  /**
+   * Additional custom meta data
+   */
+  data?: D;
 }
 
-export class Lexer<TokenType> {
+export class Lexer<TokenTypes, AdditionalTokenData = {}> {
   /**
    * The current reading position
    */
@@ -40,7 +57,7 @@ export class Lexer<TokenType> {
   /**
    * The lexes tokens
    */
-  private tokens: Array<ILexToken<TokenType>> = [];
+  private tokens: Array<IBaseLexToken<TokenTypes, AdditionalTokenData>> = [];
 
   constructor(str: string) {
     this.str = str;
@@ -159,7 +176,9 @@ export class Lexer<TokenType> {
    * Returns the last emitted token, or `undefined` if
    * no token has been emitted yet.
    */
-  public lookBehind(): ILexToken<TokenType> | undefined {
+  public lookBehind():
+    | IBaseLexToken<TokenTypes, AdditionalTokenData>
+    | undefined {
     return this.tokens[this.tokens.length - 1];
   }
 
@@ -169,21 +188,28 @@ export class Lexer<TokenType> {
    *
    * @param type TokenType - the token type to emit
    */
-  public emit(type: TokenType) {
-    this.tokens.push({
+  public emit(type: TokenTypes, tokenData?: AdditionalTokenData) {
+    const endPos = this.pos - this.start;
+    const t = {
+      data: tokenData,
+      endPos: this.pos,
+      startPos: this.start,
       type,
-      value: this.str.substr(this.start, this.pos - this.start),
-    });
+      value: this.str.substr(this.start, endPos),
+    };
+    this.tokens.push(t);
     this.start = this.pos;
   }
 
   /**
    * Pushes an error token onto the tokens array
    * @param type error type
-   * @param message error messagde
+   * @param message error message
    */
-  public emitError(type: TokenType, message: string) {
+  public emitError(type: TokenTypes, message: string) {
     this.tokens.push({
+      endPos: this.pos,
+      startPos: this.start,
       type,
       value: message,
     });
@@ -207,8 +233,8 @@ export class Lexer<TokenType> {
    * @param types The types to look for
    */
   public lookBehindForTypes(
-    ...types: TokenType[]
-  ): ILexToken<TokenType> | undefined {
+    ...types: TokenTypes[]
+  ): IBaseLexToken<TokenTypes, AdditionalTokenData> | undefined {
     // TODO improve performance if necessary
     return this.tokens
       .slice()

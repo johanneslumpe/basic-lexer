@@ -1,1 +1,1 @@
-export { Lexer, ILexToken, EOS } from './lexer';
+export { Lexer, IBaseLexToken, EOS } from './lexer';
