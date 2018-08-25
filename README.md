@@ -13,7 +13,7 @@ This basic lexer class is meant to be used within a larger lexing project. It is
 
 Below you can find a contrived example. It is purposefully kept basic to illustrate how to use the lexer. While the example below could have also easily been solved using a simple regular expression, they are in general hard to read and debug. Using a lexer gives you a lot more flexibility and your code remains readable and easily debuggable.
 
-**NOTE: This library makes use of ES7 array methods and `Symbol`. To use it within an environment that does not support these, you have to provide your own polyfills.**
+**NOTE: This library makes use of ES7 array and string methods and `Symbol`. To use it within an environment that does not support these, you have to provide your own polyfills.**
 
 ```ts
 import { EOS, Lexer } from '@johanneslumpe/basic-lexer';
@@ -48,12 +48,12 @@ const validWordChar = (char: string) => {
 /**
  * Our word lexing function
  */
-const lexWord = (lexer: MyTokenLexer): stateFn => {
+const word = (lexer: MyTokenLexer): stateFn => {
   // `acceptRun` takes a predicate and will continue to advance the lexer's reading position
   // until the predicate returns `false`. This allows us to quickly
   lexer.acceptRun(validWordChar);
   lexer.emit(IMyTokens.WORD);
-  return lexSentence;
+  return sentence;
 };
 
 /**
@@ -61,7 +61,7 @@ const lexWord = (lexer: MyTokenLexer): stateFn => {
  * It specifically returns `undefined` to terminate the main lexing loop
  * @param error
  */
-const lexError = (error: string) => (lexer: MyTokenLexer): undefined => {
+const error = (error: string) => (lexer: MyTokenLexer): undefined => {
   lexer.emitError(IMyTokens.LEXING_ERROR, error);
   return undefined;
 };
@@ -73,22 +73,22 @@ const lexError = (error: string) => (lexer: MyTokenLexer): undefined => {
  * It will also terminate the lexing loop if the lexer reaches the end of
  * our string or when an invalid character is found.
  */
-const lexSentence = (lexer: MyTokenLexer): stateFn | undefined => {
+const sentence = (lexer: MyTokenLexer): stateFn | undefined => {
   const next = lexer.next();
   switch (next) {
     case '.':
       lexer.emit(IMyTokens.PERIOD);
-      // it is important that we return `lexSentence` here to keep the loop running
-      return lexSentence;
+      // it is important that we return `sentence` here to keep the loop running
+      return sentence;
     case ' ':
       lexer.emit(IMyTokens.SPACE);
-      return lexSentence;
+      return sentence;
     case EOS:
       return undefined;
   }
 
   if (validWordChar(next)) {
-    return lexWord;
+    return word;
   }
 
   return lexError(`Invalid character found: ${next}`);
@@ -99,7 +99,7 @@ const lexSentence = (lexer: MyTokenLexer): stateFn | undefined => {
  * a state function returns `undefined`.
  */
 export const lexMySentence = (lexer: MyTokenLexer) => {
-  let state: stateFn | undefined = lexSentence;
+  let state: stateFn | undefined = sentence;
   while (state !== undefined) {
     state = state(lexer);
   }
